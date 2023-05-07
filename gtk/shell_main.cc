@@ -579,9 +579,9 @@ static void activate(GtkApplication *theApp, gpointer userData) {
 
     char *xml = (char *) malloc(10240);
     if (use_compactmenu)
-        sprintf(xml, mainWindowXml, compactMenuIntroXml, compactMenuOutroXml);
+        snprintf(xml, 10240, mainWindowXml, compactMenuIntroXml, compactMenuOutroXml);
     else
-        sprintf(xml, mainWindowXml, "", "");
+        snprintf(xml, 10240, mainWindowXml, "", "");
     GtkBuilder *builder = gtk_builder_new();
     gtk_builder_add_from_string(builder, xml, -1, NULL);
     free(xml);
@@ -3016,10 +3016,14 @@ void shell_blitter(const char *bits, int bytesperline, int x, int y,
     }
 }
 
-void shell_beeper(int frequency, int duration) {
+const int tone_freqs[] = { 165, 220, 247, 277, 294, 330, 370, 415, 440, 554, 1865 };
+
+void shell_beeper(int tone) {
 #ifdef AUDIO_ALSA
     const char *display_name = gdk_display_get_name(gdk_display_get_default());
     if (display_name == NULL || display_name[0] == ':') {
+        int frequency = tone_freqs[tone];
+        int duration = tone == 10 ? 125 : 250;
         if (!alsa_beeper(frequency, duration))
             gdk_display_beep(gdk_display_get_default());
     } else
@@ -3162,11 +3166,11 @@ bool shell_low_battery() {
         char capacity_filename[50];
         char line[50];
         for (int n = 0; n <= 2; n++) {
-            sprintf(status_filename, "/sys/class/power_supply/BAT%d/status", n);
+            snprintf(status_filename, 50, "/sys/class/power_supply/BAT%d/status", n);
             FILE *status_file = fopen(status_filename, "r");
             if (status_file == NULL)
                 continue;
-            sprintf(capacity_filename, "/sys/class/power_supply/BAT%d/capacity", n);
+            snprintf(capacity_filename, 50, "/sys/class/power_supply/BAT%d/capacity", n);
             FILE *capacity_file = fopen(capacity_filename, "r");
             if (capacity_file == NULL) {
                 fclose(status_file);
